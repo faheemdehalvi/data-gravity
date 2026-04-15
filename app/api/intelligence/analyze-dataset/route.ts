@@ -1,11 +1,5 @@
-import { z } from 'zod'
+// Direct OpenAI API route for dataset analysis - no AI SDK dependencies
 import type { DatasetAnalysis, FeatureRecommendation } from '@/lib/types'
-
-const featureRecommendationSchema = z.object({
-  columns: z.array(z.string()).describe('Exact column names from the dataset to use for clustering'),
-  reasoning: z.string().describe('Brief explanation of why these features were selected'),
-  confidence: z.number().min(0).max(1).describe('Confidence score between 0 and 1'),
-})
 
 export async function POST(req: Request) {
   try {

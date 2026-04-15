@@ -1,4 +1,4 @@
-import { z } from 'zod'
+// Direct OpenAI API route for generating cluster insights - no AI SDK dependencies
 import type { ClusterResult } from '@/lib/types'
 
 interface RawCluster {
@@ -120,7 +120,7 @@ Provide a name, description, characteristics, and recommended actions for each c
     
     // Merge LLM interpretations with raw cluster data
     const clusters: ClusterResult[] = rawClusters.map(raw => {
-      const interpretation = output?.clusters?.find((c: any) => c.id === raw.id)
+      const interpretation = output?.clusters?.find((c: { id: number }) => c.id === raw.id)
       
       return {
         id: raw.id,

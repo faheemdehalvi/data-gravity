@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -13,9 +13,38 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Data Gravity | AI-Powered CRM Segmentation for AWS',
+  title: {
+    default: 'Data Gravity | AI-Powered CRM Segmentation for AWS',
+    template: '%s | Data Gravity',
+  },
   description: 'The first Zero-Copy CRM intelligence engine built for the AWS ecosystem. AI-powered customer segmentation with native AWS integration.',
-  generator: 'v0.app',
+  keywords: ['CRM', 'AWS', 'customer segmentation', 'AI', 'machine learning', 'zero-copy', 'data analytics', 'customer intelligence'],
+  authors: [{ name: 'Data Gravity' }],
+  creator: 'Data Gravity',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://data-gravity.vercel.app'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    siteName: 'Data Gravity',
+    title: 'Data Gravity | AI-Powered CRM Segmentation for AWS',
+    description: 'The first Zero-Copy CRM intelligence engine built for the AWS ecosystem. Transform raw customer data into actionable segments.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Data Gravity | AI-Powered CRM Segmentation',
+    description: 'Zero-Copy CRM intelligence engine for AWS. Transform customer data into actionable segments.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   icons: {
     icon: [
       {
@@ -33,6 +62,16 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#050505' },
+    { media: '(prefers-color-scheme: dark)', color: '#050505' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 export default function RootLayout({

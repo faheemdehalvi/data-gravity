@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { KeyRound, Eye, EyeOff, CheckCircle2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,16 +22,24 @@ export function ApiKeyBanner({ onKeyChange }: ApiKeyBannerProps) {
   const [saved, setSaved] = useState<string | null>(null)
   const [showKey, setShowKey] = useState(false)
   const [editing, setEditing] = useState(false)
+  const onKeyChangeRef = useRef(onKeyChange)
+  const hasInitialized = useRef(false)
+  
+  // Keep ref updated
+  onKeyChangeRef.current = onKeyChange
 
   useEffect(() => {
+    if (hasInitialized.current) return
+    hasInitialized.current = true
+    
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored) {
       setSaved(stored)
-      onKeyChange?.(stored)
+      onKeyChangeRef.current?.(stored)
     } else {
       setEditing(true)
     }
-  }, [onKeyChange])
+  }, [])
 
   const handleSave = () => {
     const trimmed = key.trim()

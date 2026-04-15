@@ -7,6 +7,7 @@ import { DataPreview } from '@/components/intelligence/data-preview'
 import { FeatureSelector } from '@/components/intelligence/feature-selector'
 import { ProcessingView } from '@/components/intelligence/processing-view'
 import { ClusterResults } from '@/components/intelligence/cluster-results'
+import { ApiKeyBanner } from '@/components/intelligence/api-key-banner'
 import { Badge } from '@/components/ui/badge'
 import { Brain, Upload, Eye, Settings2, Loader2, BarChart3 } from 'lucide-react'
 
@@ -55,16 +56,17 @@ function WorkflowStepper() {
 }
 
 function WorkflowContent() {
-  const { state } = useWorkflow()
+  const { state, setApiKey } = useWorkflow()
   
   return (
-    <>
+    <div className="flex flex-col gap-4">
+      <ApiKeyBanner onKeyChange={setApiKey} />
       {state.step === 'upload' && <UploadZone />}
       {state.step === 'preview' && <DataPreview />}
       {state.step === 'features' && <FeatureSelector />}
       {state.step === 'processing' && <ProcessingView />}
       {state.step === 'results' && <ClusterResults />}
-    </>
+    </div>
   )
 }
 

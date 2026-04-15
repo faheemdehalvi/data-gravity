@@ -13,7 +13,7 @@ import type { FeatureRecommendation } from '@/lib/types'
 
 export function FeatureSelector() {
   const { state, goToStep, setFeatures, setNumClusters, setError } = useWorkflow()
-  const { analysis, numClusters } = state
+  const { analysis, numClusters, apiKey } = state
   
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [recommendation, setRecommendation] = useState<FeatureRecommendation | null>(null)
@@ -30,7 +30,10 @@ export function FeatureSelector() {
       try {
         const res = await fetch('/api/intelligence/analyze-dataset', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-openai-key': apiKey } : {}),
+          },
           body: JSON.stringify({ analysis })
         })
         

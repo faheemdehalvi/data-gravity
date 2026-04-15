@@ -63,6 +63,7 @@ export interface WorkflowState {
   isLoading: boolean
   progress: number
   progressMessage: string
+  apiKey: string | null
 }
 
 export interface ProcessingUpdate {

@@ -21,6 +21,11 @@ interface RawCluster {
 
 export async function POST(req: Request) {
   try {
+    const apiKey = req.headers.get('x-openai-key') || process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      return Response.json({ error: 'No OpenAI API key provided. Add your key in the Intelligence panel.' }, { status: 401 })
+    }
+
     const { 
       rawClusters, 
       featureNames,
@@ -48,6 +53,7 @@ export async function POST(req: Request) {
     
     const { output } = await generateText({
       model: 'openai/gpt-4o-mini',
+      providerOptions: { openai: { apiKey } },
       output: Output.object({
         schema: clusterInterpretationSchema,
       }),

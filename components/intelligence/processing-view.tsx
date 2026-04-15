@@ -19,7 +19,7 @@ const STAGES = [
 
 export function ProcessingView() {
   const { state, setClusteringOutput, goToStep, setError, setProgress } = useWorkflow()
-  const { rawData, selectedFeatures, numClusters, progress, progressMessage } = state
+  const { rawData, selectedFeatures, numClusters, progress, progressMessage, apiKey } = state
   const hasStarted = useRef(false)
   
   useEffect(() => {
@@ -41,7 +41,10 @@ export function ProcessingView() {
         // Get LLM insights for clusters
         const insightsRes = await fetch('/api/intelligence/generate-insights', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(apiKey ? { 'x-openai-key': apiKey } : {}),
+          },
           body: JSON.stringify({
             rawClusters: result.rawClusters,
             featureNames: selectedFeatures,

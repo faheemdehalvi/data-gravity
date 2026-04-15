@@ -16,6 +16,7 @@ const initialState: WorkflowState = {
   isLoading: false,
   progress: 0,
   progressMessage: '',
+  apiKey: null,
 }
 
 type WorkflowAction =
@@ -29,6 +30,7 @@ type WorkflowAction =
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_PROGRESS'; payload: { progress: number; message: string } }
+  | { type: 'SET_API_KEY'; payload: string | null }
   | { type: 'RESET' }
 
 function workflowReducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
@@ -53,6 +55,8 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
       return { ...state, isLoading: action.payload }
     case 'SET_PROGRESS':
       return { ...state, progress: action.payload.progress, progressMessage: action.payload.message }
+    case 'SET_API_KEY':
+      return { ...state, apiKey: action.payload }
     case 'RESET':
       return initialState
     default:
@@ -74,6 +78,7 @@ interface WorkflowContextValue {
   setError: (error: string | null) => void
   setLoading: (loading: boolean) => void
   setProgress: (progress: number, message: string) => void
+  setApiKey: (key: string | null) => void
   reset: () => void
 }
 
@@ -95,6 +100,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
     setError: (error) => dispatch({ type: 'SET_ERROR', payload: error }),
     setLoading: (loading) => dispatch({ type: 'SET_LOADING', payload: loading }),
     setProgress: (progress, message) => dispatch({ type: 'SET_PROGRESS', payload: { progress, message } }),
+    setApiKey: (key) => dispatch({ type: 'SET_API_KEY', payload: key }),
     reset: () => dispatch({ type: 'RESET' }),
   }
 

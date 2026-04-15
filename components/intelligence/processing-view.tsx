@@ -30,8 +30,8 @@ export function ProcessingView() {
       try {
         // Run ML pipeline
         const result = runClusteringPipeline(
-          rawData,
-          selectedFeatures,
+          rawData as Record<string, unknown>[],
+          selectedFeatures as string[],
           numClusters,
           (stage, prog) => setProgress(prog, stage)
         )
@@ -47,7 +47,7 @@ export function ProcessingView() {
             featureNames: selectedFeatures,
             featureImportance: result.featureImportance,
             silhouetteScore: result.silhouetteScore,
-            totalCustomers: rawData.length
+            totalCustomers: (rawData as Record<string, unknown>[]).length
           })
         })
         

@@ -1,16 +1,5 @@
-import { generateText, Output } from 'ai'
 import { z } from 'zod'
 import type { ClusterResult } from '@/lib/types'
-
-const clusterInterpretationSchema = z.object({
-  clusters: z.array(z.object({
-    id: z.number(),
-    name: z.string().describe('Creative, business-friendly name for this customer segment'),
-    businessDescription: z.string().describe('2-3 sentence description of who these customers are'),
-    characteristics: z.array(z.string()).describe('3-5 key traits that define this segment'),
-    recommendedActions: z.array(z.string()).describe('3-4 specific marketing/business actions'),
-  }))
-})
 
 interface RawCluster {
   id: number
@@ -51,57 +40,99 @@ export async function POST(req: Request) {
       cohesion: cluster.avgDistance.toFixed(3)
     }))
     
-    const { output } = await generateText({
-      model: 'openai/gpt-4o-mini',
-      providerOptions: { openai: { apiKey } },
-      output: Output.object({
-        schema: clusterInterpretationSchema,
-      }),
-      messages: [
-        {
-          role: 'system',
-          content: `You are a customer intelligence expert interpreting K-Means clustering results.
+    // Call OpenAI API directly
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a customer intelligence expert interpreting K-Means clustering results.
 Your task is to give each cluster a meaningful business name and actionable insights.
 
-RULES:
-1. Create distinct, memorable segment names (e.g., "High-Value Loyalists", "At-Risk Champions", "Price-Sensitive Browsers")
-2. Base descriptions on the centroid values - high values mean the segment scores above average on that feature
-3. Consider feature importance when describing what defines each segment
-4. Recommend specific, actionable business strategies for each segment
-5. Be concise but insightful - focus on business value`
-        },
-        {
-          role: 'user',
-          content: `Interpret these customer clusters and provide business insights.
+CRITICAL RULES:
+1. Create distinct, memorable segment names (e.g., "High-Value Loyalists", "At-Risk Champions")
+2. Base descriptions on centroid values - high = above average on that feature
+3. Consider feature importance when describing segments
+4. Recommend specific, actionable business strategies
+5. Respond ONLY with valid JSON in this exact format:
+{
+  "clusters": [
+    {
+      "id": 0,
+      "name": "Segment Name",
+      "businessDescription": "2-3 sentence description",
+      "characteristics": ["trait1", "trait2", "trait3"],
+      "recommendedActions": ["action1", "action2", "action3"]
+    }
+  ]
+}`
+          },
+          {
+            role: 'user',
+            content: `Interpret these customer clusters and provide business insights.
 
 Clustering Quality: Silhouette Score = ${silhouetteScore.toFixed(3)} (${silhouetteScore > 0.5 ? 'Good' : silhouetteScore > 0.25 ? 'Fair' : 'Weak'} separation)
 
-Most Important Features (ranked by how much they differentiate clusters):
+Most Important Features:
 ${featureImportance.slice(0, 5).map(f => `- ${f.feature}: ${(f.importance * 100).toFixed(0)}% importance`).join('\n')}
 
-Cluster Details (centroid values are standardized, 0 = average, positive = above average, negative = below):
+Cluster Details (centroid values are standardized):
 ${JSON.stringify(clusterContexts, null, 2)}
 
 Provide a name, description, characteristics, and recommended actions for each cluster.`
-        }
-      ]
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1500,
+      })
     })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || 'OpenAI API error')
+    }
+
+    const data = await response.json()
+    const content = data.choices[0]?.message?.content || '{}'
+    
+    // Parse the JSON response
+    let output
+    try {
+      output = JSON.parse(content)
+    } catch {
+      // If JSON parsing fails, create default insights
+      output = {
+        clusters: rawClusters.map(c => ({
+          id: c.id,
+          name: `Segment ${c.id + 1}`,
+          businessDescription: `A segment of ${c.size} customers`,
+          characteristics: ['Customer segment identified'],
+          recommendedActions: ['Analyze further']
+        }))
+      }
+    }
     
     // Merge LLM interpretations with raw cluster data
     const clusters: ClusterResult[] = rawClusters.map(raw => {
-      const interpretation = output?.clusters?.find(c => c.id === raw.id)
+      const interpretation = output?.clusters?.find((c: any) => c.id === raw.id)
       
       return {
         id: raw.id,
         name: interpretation?.name ?? `Segment ${raw.id + 1}`,
         size: raw.size,
         centroid: raw.centroid,
-        characteristics: interpretation?.characteristics ?? ['Customer segment identified by clustering'],
+        characteristics: interpretation?.characteristics ?? ['Customer segment identified'],
         businessDescription: interpretation?.businessDescription ?? `A segment of ${raw.size} customers with distinct behavioral patterns.`,
-        recommendedActions: interpretation?.recommendedActions ?? ['Analyze segment further', 'Develop targeted campaigns'],
+        recommendedActions: interpretation?.recommendedActions ?? ['Analyze segment', 'Develop campaigns'],
         metrics: {
           avgDistance: raw.avgDistance,
-          cohesion: 1 / (1 + raw.avgDistance) // Convert distance to cohesion score
+          cohesion: 1 / (1 + raw.avgDistance)
         }
       }
     })

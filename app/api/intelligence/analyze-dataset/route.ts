@@ -1,4 +1,3 @@
-import { generateText, Output } from 'ai'
 import { z } from 'zod'
 import type { DatasetAnalysis, FeatureRecommendation } from '@/lib/types'
 
@@ -35,16 +34,19 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
     
-    const { output } = await generateText({
-      model: 'openai/gpt-4o-mini',
-      providerOptions: { openai: { apiKey } },
-      output: Output.object({
-        schema: featureRecommendationSchema,
-      }),
-      messages: [
-        {
-          role: 'system',
-          content: `You are a data science expert analyzing customer datasets for segmentation.
+    // Call OpenAI API directly
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a data science expert analyzing customer datasets for segmentation.
 Your task is to recommend the BEST features for K-Means clustering to create meaningful customer segments.
 
 CRITICAL RULES:
@@ -52,11 +54,16 @@ CRITICAL RULES:
 2. Prefer features that capture customer behavior, value, and engagement
 3. Avoid ID columns, dates as raw numbers, or features with too many nulls
 4. Select 3-6 features that together paint a complete picture of customer differences
-5. The columns array must contain EXACT column names from the input`
-        },
-        {
-          role: 'user',
-          content: `Analyze this dataset and recommend features for customer segmentation clustering.
+5. Respond ONLY with valid JSON in this exact format:
+{
+  "columns": ["col1", "col2", "col3"],
+  "reasoning": "explanation",
+  "confidence": 0.85
+}`
+          },
+          {
+            role: 'user',
+            content: `Analyze this dataset and recommend features for customer segmentation clustering.
 
 Dataset has ${analysis.rowCount} rows.
 
@@ -64,12 +71,32 @@ Available NUMERIC columns (you can ONLY select from these):
 ${JSON.stringify(numericColumns, null, 2)}
 
 Recommend the best combination of features for meaningful customer segmentation.`
-        }
-      ]
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      })
     })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error?.message || 'OpenAI API error')
+    }
+
+    const data = await response.json()
+    const content = data.choices[0]?.message?.content || '{}'
+    
+    // Parse the JSON response
+    let output
+    try {
+      output = JSON.parse(content)
+    } catch {
+      // If JSON parsing fails, extract what we can
+      output = { columns: numericColumns.slice(0, 3).map(c => c.name), reasoning: content, confidence: 0.6 }
+    }
     
     // Validate that recommended columns actually exist
-    const validColumns = output?.columns?.filter(col => 
+    const validColumns = output?.columns?.filter((col: string) => 
       numericColumns.some(nc => nc.name === col)
     ) ?? []
     

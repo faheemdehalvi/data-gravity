@@ -3,10 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Database, Layers, FlaskConical, ScrollText, Orbit, Settings, LogOut } from "lucide-react"
+import { Database, Layers, FlaskConical, ScrollText, Orbit, Settings, LogOut, Brain } from "lucide-react"
 
 const navItems = [
   { name: "Data Sources", href: "/dashboard", icon: Database },
+  { name: "Intelligence", href: "/dashboard/intelligence", icon: Brain },
   { name: "Clusters", href: "/dashboard/clusters", icon: Layers },
   { name: "Strategy Lab", href: "/dashboard/strategy", icon: FlaskConical },
   { name: "Deployment Logs", href: "/dashboard/logs", icon: ScrollText },
